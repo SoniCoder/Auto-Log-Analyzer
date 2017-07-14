@@ -1,1 +1,3 @@
-hi
+  Time: \d*-\w*-\d* \d*:\d*:\d*
+
+* Add ways to store expressions (then load from a file)
