@@ -9,9 +9,9 @@ import re
 
 
 def inspect(f,rexpr, hist):
-    print("Opening file")
+    print("Opening File")
     f = open(f)
-    print("fileOpened")
+    print("File Opened")
     ocDict = {}
     mainPattern = re.compile(rexpr)
     datePattern = re.compile("  Time: (\d*)-(\w*)-(\d*) \d*:\d*:\d*")
@@ -49,24 +49,33 @@ def inspect(f,rexpr, hist):
     return ocDict
 
 class BarChart:
-    def __init__(self):
-        self.set0 = QBarSet('Jane')
-        self.set1 = QBarSet('John')
+    def __init__(self, arg, arg2):
+        self.set0 = QBarSet(arg2[0])
         self.series = QBarSeries()
         self.chart = QChart()
         self.axis = QBarCategoryAxis(self.chart)
-        self.categories = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun']
+        self.categories = [str(i) for i in range(1, 32)]
 
-        self.set0.append([1, 2, 3, 4, 5, 6])
-        self.set1.append([5, 0, 0, 4, 0, 7])
+        freqList = []
+        for i in range(1, 32):
+            if arg:
+                key = None
+                if i < 10:
+                    key = "0"+str(i)
+                else: key = str(i)
+                if key in arg: freqList.append(arg[key])
+                else: freqList.append(0)
+            else:
+                freqList.append(0)
+        self.set0.append(freqList)
         self.series.append(self.set0)
-        self.series.append(self.set1)
         self.chart.addSeries(self.series)
         self.axis.append(self.categories)
 
-        self.chart.setTitle('Simple barchart example')
+        self.chart.setTitle('Frequency Histogram')
         self.chart.createDefaultAxes()
         self.chart.setAxisX(self.axis, self.series)
+        #self.chart.legend().setEnabled(False)
         self.chart.legend().setAlignment(Qt.AlignBottom)
 
         self.cv = QChartView(self.chart)
@@ -91,6 +100,8 @@ class Window(QMainWindow):
         customRE.setStatusTip('Enter a custom regular expression')
         customRE.triggered.connect(self.custRE)
 
+        exitAction = QAction("&Exit", self)
+        exitAction.triggered.connect(self.close_application)
 
         self.statusBar()
 
@@ -98,6 +109,7 @@ class Window(QMainWindow):
         fileMenu = mainMenu.addMenu('&File')
         optionMenu = mainMenu.addMenu('&Options')
         fileMenu.addAction(extractAction)
+        fileMenu.addAction(exitAction)
         optionMenu.addAction(customRE)
         
         self.home()
@@ -108,13 +120,32 @@ class Window(QMainWindow):
         btn.resize(btn.minimumSizeHint())
         btn.move(20,40)
 
-        chartRefreshBtn = QPushButton("Refresh", self)
+        chartRefreshBtn = QPushButton("Show Histogram", self)
         chartRefreshBtn.clicked.connect(self.histogram)
-        chartRefreshBtn.resize(btn.minimumSizeHint())
-        chartRefreshBtn.move(100,40)
+        chartRefreshBtn.resize(chartRefreshBtn.minimumSizeHint())
+        chartRefreshBtn.move(20,150)
 
+        yrlbl = QLabel("Year-Month",self)
+        yrlbl.move(20, 90)
+        
+        self.yearSel = QLineEdit(self)
+        self.yearSel.move(120, 97)
+        self.yearSel.resize(self.yearSel.minimumSizeHint())
+
+        self.monthCB = QComboBox(self)
+        self.monthCB.move(200, 97)
+        self.monthCB.resize(self.monthCB.minimumSizeHint())
+        self.monthCB.addItems(["JAN","FEB","MAR","APR","MAY","JUN","JUL","AUG","SEP","OCT","NOV","DEC"])
+
+        self.errorCB = QComboBox(self)
+        self.errorCB.move(150, 150)
+        self.errorCB.addItem("Select Error Category from here")
+        self.errorCB.resize(300,chartRefreshBtn.height())
+        
+        
         self.chbox1 = QCheckBox("Histogram", self)
-        self.chbox1.move(20, 80)
+        self.chbox1.move(120, 40)
+        
         self.show()
         
     def custRE(self):
@@ -126,7 +157,18 @@ class Window(QMainWindow):
         self.chartWindow = QMainWindow()
         self.chartWindow.setWindowTitle("Frequency Charts")
         self.chartWindow.resize(800, 600)
-        self.ch = BarChart()
+
+
+        arg = None
+        print (self.yearSel.text())
+        print(self.yearSel.text() in self.data[self.errorCB.currentText()])
+        if self.yearSel.text() in self.data[self.errorCB.currentText()] and self.monthCB.currentText() in self.data[self.errorCB.currentText()][self.yearSel.text()]:
+            arg = self.data[self.errorCB.currentText()][self.yearSel.text()][self.monthCB.currentText()]
+            print("Valid Month Found")
+        else:
+            print("Invalid Month Found")
+        
+        self.ch = BarChart(arg, (self.errorCB.currentText(),))
         
         self.chartWindow.setCentralWidget(self.ch.cv)
         self.chartWindow.show()
@@ -135,7 +177,10 @@ class Window(QMainWindow):
             #print("Starting analysis")
             ocDict = inspect(self.fileSelected, self.re, self.chbox1.checkState())
             self.data = ocDict
-            if self.chbox1.checkState(): self.histogram()
+            if self.chbox1.checkState():
+                for i in ocDict:
+                    if i!="count":
+                        self.errorCB.addItem(i)
             
             self.window = QWidget()
             self.table = QTableWidget(self.window)
