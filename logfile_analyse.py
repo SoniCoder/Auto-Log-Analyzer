@@ -259,7 +259,7 @@ class Window(QMainWindow):
             self.window.resize(w_width, w_height)
             self.table.move(0, mb_height)
             self.table.resize(w_width, w_height-mb_height)
-            self.table.setRowCount(len(ocDict))
+            self.table.setRowCount(len(ocDict)+1)
             self.table.setColumnCount(2)
             self.table.setColumnWidth(0, w_width/2)
             self.table.setColumnWidth(1, w_width/2)
@@ -267,12 +267,15 @@ class Window(QMainWindow):
             self.table.setHorizontalHeaderLabels("Error Name;Frequency;".split(";"))
 
             curRow = 0
-
+            total = 0
             # set data
             for i in ocDict:
                 self.table.setItem(curRow,0, QTableWidgetItem(i))
                 self.table.setItem(curRow,1, QTableWidgetItem(str(ocDict[i]["count"])))
+                total += ocDict[i]["count"]
                 curRow += 1
+            self.table.setItem(curRow,0, QTableWidgetItem("Total Issues"))
+            self.table.setItem(curRow,1, QTableWidgetItem(str(total)))
             self.window.show()
             self.table.show()
     def file_select(self):
