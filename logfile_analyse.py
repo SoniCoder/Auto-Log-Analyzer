@@ -5,6 +5,7 @@ from PyQt5.QtGui import *
 from PyQt5.QtChart import *
 import re
 
+# test data for 
 testDict = None
 
 
@@ -52,39 +53,6 @@ def inspect(f,rexpr, hist):
     testDict = ocDict
     #print(ocDict)
     return ocDict
-
-##class BarChart:
-##    def __init__(self, arg, arg2, week = None):
-##        self.set0 = QBarSet(arg2[0])
-##        self.series = QBarSeries()
-##        self.chart = QChart()
-##        self.axis = QBarCategoryAxis(self.chart)
-##        self.categories = [str(i) for i in range(1, 32)]
-##
-##        freqList = []
-##        for i in range(1, 32):
-##            if arg:
-##                key = None
-##                if i < 10:
-##                    key = "0"+str(i)
-##                else: key = str(i)
-##                if key in arg: freqList.append(arg[key])
-##                else: freqList.append(0)
-##            else:
-##                freqList.append(0)
-##        self.set0.append(freqList)
-##        self.series.append(self.set0)
-##        self.chart.addSeries(self.series)
-##        self.axis.append(self.categories)
-##
-##        self.chart.setTitle('Frequency Histogram')
-##        self.chart.createDefaultAxes()
-##        self.chart.setAxisX(self.axis, self.series)
-##        #self.chart.legend().setEnabled(False)
-##        self.chart.legend().setAlignment(Qt.AlignBottom)
-##
-##        self.cv = QChartView(self.chart)
-
 
 class BarChart:
     def __init__(self, arg, arg2, week = None):
@@ -154,6 +122,7 @@ class BarChart:
 class Window(QMainWindow):
     def __init__(self):
         self.fileSelected = ""
+        self.files = []
         self.re = "TNS-\d{5}: .*"
         
         super(Window, self).__init__()
@@ -166,6 +135,10 @@ class Window(QMainWindow):
         extractAction.setStatusTip('Select Appropriate Log File')
         extractAction.triggered.connect(self.file_select)
 
+        multifileAction = QAction("&Open multiple files", self)
+        multifileAction.setStatusTip('Select Multiple Log Files At Once')
+        multifileAction.triggered.connect(self.multi_file_select)
+        
         customRE = QAction("&Enter Custom Expression", self)
         customRE.setStatusTip('Enter a custom regular expression')
         customRE.triggered.connect(self.custRE)
@@ -179,52 +152,61 @@ class Window(QMainWindow):
         fileMenu = mainMenu.addMenu('&File')
         optionMenu = mainMenu.addMenu('&Options')
         fileMenu.addAction(extractAction)
+        fileMenu.addAction(multifileAction)
         fileMenu.addAction(exitAction)
         optionMenu.addAction(customRE)
         
         self.home()
 
     def home(self):
+        flLbl = QLabel("Log File:",self)
+        flLbl.move(20, 35)
+
         btn = QPushButton("Analyze", self)
         btn.clicked.connect(self.analyze)
         btn.resize(btn.minimumSizeHint())
-        btn.move(20,40)
+        btn.move(20,80)
 
         chartRefreshBtn = QPushButton("Show Histogram", self)
         chartRefreshBtn.clicked.connect(self.histogram)
         chartRefreshBtn.resize(chartRefreshBtn.minimumSizeHint())
-        chartRefreshBtn.move(20,150)
+        chartRefreshBtn.move(20,190)
+
+        self.flCB = QComboBox(self)
+        self.flCB.move(150, 35)
+        self.flCB.addItem("Select Log File from here")
+        self.flCB.resize(300,chartRefreshBtn.height())
+        self.flCB.currentIndexChanged.connect(self.file_changed)
 
         yrlbl = QLabel("Year-Month",self)
-        yrlbl.move(20, 90)
+        yrlbl.move(20, 130)
         
         self.yearSel = QLineEdit(self)
-        self.yearSel.move(120, 97)
+        self.yearSel.move(120, 137)
         self.yearSel.resize(self.yearSel.minimumSizeHint())
 
         self.monthCB = QComboBox(self)
-        self.monthCB.move(200, 97)
+        self.monthCB.move(200, 137)
         self.monthCB.resize(self.monthCB.minimumSizeHint())
         self.monthCB.addItems(["JAN","FEB","MAR","APR","MAY","JUN","JUL","AUG","SEP","OCT","NOV","DEC"])
 
         self.errorCB = QComboBox(self)
-        self.errorCB.move(150, 150)
+        self.errorCB.move(150, 190)
         self.errorCB.addItem("Select Error Category from here")
         self.errorCB.resize(300,chartRefreshBtn.height())
         
         
         self.chbox1 = QCheckBox("Histogram", self)
-        self.chbox1.move(120, 40)
+        self.chbox1.move(120, 80)
 
         self.chbox2 = QCheckBox("Prepare Weekly", self)
-        self.chbox2.move(20, 190)
+        self.chbox2.move(20, 230)
 
         self.weekCB = QComboBox(self)
-        self.weekCB.move(150, 190)
+        self.weekCB.move(150, 230)
         self.weekCB.addItem("Select Week from here")
         self.weekCB.resize(300,chartRefreshBtn.height())
         self.weekCB.addItems(["Week 1: Day 1 - 7", "Week 2: Day 8 - 14", "Week 3: Day 15 - 21", "Week 4: Day 22 - 28", "Week 5: Day 29 - 31"])
-        
         
         self.show()
         
@@ -263,7 +245,6 @@ class Window(QMainWindow):
                 for i in ocDict:
                     if i!="count":
                         self.errorCB.addItem(i)
-            
             self.window = QWidget()
             self.table = QTableWidget(self.window)
             self.tableItem = QTableWidgetItem()
@@ -297,15 +278,37 @@ class Window(QMainWindow):
     def file_select(self):
         options = QFileDialog.Options()
         #options |= QFileDialog.DontUseNativeDialog
-        fileName, _ = QFileDialog.getOpenFileName(self,"Select a log file", "","All Files (*);;Python Files (*.py)", options=options)
+        fileName, _ = QFileDialog.getOpenFileName(self,"Select a log file", "","All Files (*);;Log Files (*.log)", options=options)
         if fileName:
             print("File Selected:",fileName)
-            self.fileSelected = fileName
+            self.files.append(fileName)
+        self.refresh_files()
+    def multi_file_select(self):
+        options = QFileDialog.Options()
+        #options |= QFileDialog.DontUseNativeDialog
+        fileNames, _ = QFileDialog.getOpenFileNames(self,"Select a log file", "","All Files (*);;Log Files (*.log)", options=options)
+        if fileNames:
+            print("Files Selected:",fileNames)
+            self.files += fileNames
+        self.refresh_files()    
     def close_application(self):
         #print("whooaaaa so custom!!!")
         sys.exit()
 
+    def file_changed(self):
+        self.fileSelected = self.flCB.currentText()
 
+    def refresh_files(self):
+        self.flCB.clear()
+        
+        if self.files:
+            self.flCB.addItems(self.files)
+            
+            self.flCB.setCurrentIndex(len(self.files)-1)
+            self.fileSelected = self.files[-1]
+            
+        else:
+            self.flCB.addItem("Add log file(s) using file menu")
 
 # Run Everything
 app = QApplication(sys.argv)
