@@ -9,7 +9,7 @@ import re
 testDict = None
 
 
-def inspect(f,rexpr, hist):
+def inspect(f,rexpr, hist, ocDict):
     global testDict
     print("Opening File")
     f = open(f)
@@ -18,7 +18,6 @@ def inspect(f,rexpr, hist):
     else:
         print("File Opening Exception")
         exit(1)
-    ocDict = {}
     mainPattern = re.compile(rexpr)
     datePattern = re.compile("  Time: (\d*)-(\w*)-(\d*) \d*:\d*:\d*")
     latestYear = None
@@ -52,7 +51,7 @@ def inspect(f,rexpr, hist):
                 ocDict[res] = {"count":1, latestYear:{latestMonth: {latestDay: 1}}}   
     testDict = ocDict
     #print(ocDict)
-    return ocDict
+    return
 
 class BarChart:
     def __init__(self, arg, arg2, week = None):
@@ -121,12 +120,13 @@ class BarChart:
 
 class Window(QMainWindow):
     def __init__(self):
+        self.data = {}
         self.fileSelected = ""
         self.files = []
         self.re = "TNS-\d{5}: .*"
         
         super(Window, self).__init__()
-        self.setGeometry(50, 50, 500, 300)
+        self.setGeometry(50, 50, 500, 400)
         self.setWindowTitle("Performance Analyzer")
         self.setWindowIcon(QIcon('icon.png'))
 
@@ -138,6 +138,10 @@ class Window(QMainWindow):
         multifileAction = QAction("&Open multiple files", self)
         multifileAction.setStatusTip('Select Multiple Log Files At Once')
         multifileAction.triggered.connect(self.multi_file_select)
+
+        saveChartAction = QAction("&Save Chart", self)
+        saveChartAction.setStatusTip('Save Chart As Image')
+        saveChartAction.triggered.connect(self.save_chart)
         
         customRE = QAction("&Enter Custom Expression", self)
         customRE.setStatusTip('Enter a custom regular expression')
@@ -153,24 +157,28 @@ class Window(QMainWindow):
         optionMenu = mainMenu.addMenu('&Options')
         fileMenu.addAction(extractAction)
         fileMenu.addAction(multifileAction)
+        fileMenu.addAction(saveChartAction)
         fileMenu.addAction(exitAction)
         optionMenu.addAction(customRE)
         
-        self.home()
+        self.design()
 
-    def home(self):
+    def design(self):
         flLbl = QLabel("Log File:",self)
         flLbl.move(20, 35)
+
+        patLbl = QLabel("Pattern:",self)
+        patLbl.move(20, 75)
 
         btn = QPushButton("Analyze", self)
         btn.clicked.connect(self.analyze)
         btn.resize(btn.minimumSizeHint())
-        btn.move(20,80)
+        btn.move(20,120)
 
         chartRefreshBtn = QPushButton("Show Histogram", self)
         chartRefreshBtn.clicked.connect(self.histogram)
         chartRefreshBtn.resize(chartRefreshBtn.minimumSizeHint())
-        chartRefreshBtn.move(20,190)
+        chartRefreshBtn.move(20,230)
 
         self.flCB = QComboBox(self)
         self.flCB.move(150, 35)
@@ -178,32 +186,42 @@ class Window(QMainWindow):
         self.flCB.resize(300,chartRefreshBtn.height())
         self.flCB.currentIndexChanged.connect(self.file_changed)
 
+        self.patCB = QComboBox(self)
+        self.patCB.move(150, 75)
+        self.patCB.addItem("TNS-\d{5}: .*")
+        self.patCB.resize(300,chartRefreshBtn.height())
+        self.patCB.currentIndexChanged.connect(self.pat_changed)
+
         yrlbl = QLabel("Year-Month",self)
-        yrlbl.move(20, 130)
+        yrlbl.move(20, 170)
         
         self.yearSel = QLineEdit(self)
-        self.yearSel.move(120, 137)
+        self.yearSel.move(120, 177)
         self.yearSel.resize(self.yearSel.minimumSizeHint())
 
         self.monthCB = QComboBox(self)
-        self.monthCB.move(200, 137)
+        self.monthCB.move(200, 177)
         self.monthCB.resize(self.monthCB.minimumSizeHint())
         self.monthCB.addItems(["JAN","FEB","MAR","APR","MAY","JUN","JUL","AUG","SEP","OCT","NOV","DEC"])
 
         self.errorCB = QComboBox(self)
-        self.errorCB.move(150, 190)
+        self.errorCB.move(150, 230)
         self.errorCB.addItem("Select Error Category from here")
         self.errorCB.resize(300,chartRefreshBtn.height())
         
         
         self.chbox1 = QCheckBox("Histogram", self)
-        self.chbox1.move(120, 80)
+        self.chbox1.move(120, 120)
 
         self.chbox2 = QCheckBox("Prepare Weekly", self)
-        self.chbox2.move(20, 230)
+        self.chbox2.move(20, 270)
 
+        self.chbox3 = QCheckBox("Combine Files", self)
+        self.chbox3.move(220, 120)
+        self.chbox3.setChecked(True)
+        
         self.weekCB = QComboBox(self)
-        self.weekCB.move(150, 230)
+        self.weekCB.move(150, 270)
         self.weekCB.addItem("Select Week from here")
         self.weekCB.resize(300,chartRefreshBtn.height())
         self.weekCB.addItems(["Week 1: Day 1 - 7", "Week 2: Day 8 - 14", "Week 3: Day 15 - 21", "Week 4: Day 22 - 28", "Week 5: Day 29 - 31"])
@@ -239,8 +257,15 @@ class Window(QMainWindow):
     def analyze(self):
         if self.fileSelected:
             #print("Starting analysis")
-            ocDict = inspect(self.fileSelected, self.re, self.chbox1.checkState())
-            self.data = ocDict
+            self.data = {}
+            if(self.chbox3.checkState()):
+                for f in self.files:   
+                    inspect(f, self.re, self.chbox1.checkState(), self.data)
+            else:
+                inspect(self.fileSelected, self.re, self.chbox1.checkState(), self.data)
+
+            ocDict = self.data
+            
             if self.chbox1.checkState():
                 for i in ocDict:
                     if i!="count":
@@ -298,6 +323,9 @@ class Window(QMainWindow):
         #print("whooaaaa so custom!!!")
         sys.exit()
 
+
+    def pat_changed(self):
+        pass
     def file_changed(self):
         self.fileSelected = self.flCB.currentText()
 
@@ -313,7 +341,20 @@ class Window(QMainWindow):
         else:
             self.flCB.addItem("Add log file(s) using file menu")
 
+    def save_chart(self):
+        print("Rendering and Saving Image")
+        im = QImage(1600,1200, QImage.Format_ARGB32)
+        painter = QPainter(im)
+        self.ch.cv.render(painter)
+        fileName = ""
+        if(self.chbox2.checkState()):
+            fileName = self.yearSel.text()+"-"+self.monthCB.currentText()+"-"+self.weekCB.currentText()+".jpg"
+        else:   fileName = self.yearSel.text()+"-"+self.monthCB.currentText()+".jpg"
+        im.save(fileName)
+        
 # Run Everything
 app = QApplication(sys.argv)
+print("Creating Primary Window Object")
 GUI = Window()
+print("Primary Window Object Created")
 app.exec_()
