@@ -174,7 +174,7 @@ class Window(QMainWindow):
 
         self.flCB = QComboBox(self)
         self.flCB.move(150, 35)
-        self.flCB.addItem("Select Log File from here")
+        self.flCB.addItem("Add log file(s) using file menu")
         self.flCB.resize(300,chartRefreshBtn.height())
         self.flCB.currentIndexChanged.connect(self.file_changed)
 
