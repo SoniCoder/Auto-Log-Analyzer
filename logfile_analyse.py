@@ -5,13 +5,18 @@ from PyQt5.QtGui import *
 from PyQt5.QtChart import *
 import re
 
-
+testDict = None
 
 
 def inspect(f,rexpr, hist):
+    global testDict
     print("Opening File")
     f = open(f)
-    print("File Opened")
+    if f:
+        print("File Opened Successfully")
+    else:
+        print("File Opening Exception")
+        exit(1)
     ocDict = {}
     mainPattern = re.compile(rexpr)
     datePattern = re.compile("  Time: (\d*)-(\w*)-(\d*) \d*:\d*:\d*")
@@ -44,42 +49,107 @@ def inspect(f,rexpr, hist):
                     ocDict[res][latestYear] = {latestMonth: {latestDay: 1}}
             else:
                 ocDict[res] = {"count":1, latestYear:{latestMonth: {latestDay: 1}}}   
-
+    testDict = ocDict
     #print(ocDict)
     return ocDict
 
+##class BarChart:
+##    def __init__(self, arg, arg2, week = None):
+##        self.set0 = QBarSet(arg2[0])
+##        self.series = QBarSeries()
+##        self.chart = QChart()
+##        self.axis = QBarCategoryAxis(self.chart)
+##        self.categories = [str(i) for i in range(1, 32)]
+##
+##        freqList = []
+##        for i in range(1, 32):
+##            if arg:
+##                key = None
+##                if i < 10:
+##                    key = "0"+str(i)
+##                else: key = str(i)
+##                if key in arg: freqList.append(arg[key])
+##                else: freqList.append(0)
+##            else:
+##                freqList.append(0)
+##        self.set0.append(freqList)
+##        self.series.append(self.set0)
+##        self.chart.addSeries(self.series)
+##        self.axis.append(self.categories)
+##
+##        self.chart.setTitle('Frequency Histogram')
+##        self.chart.createDefaultAxes()
+##        self.chart.setAxisX(self.axis, self.series)
+##        #self.chart.legend().setEnabled(False)
+##        self.chart.legend().setAlignment(Qt.AlignBottom)
+##
+##        self.cv = QChartView(self.chart)
+
+
 class BarChart:
-    def __init__(self, arg, arg2):
-        self.set0 = QBarSet(arg2[0])
-        self.series = QBarSeries()
-        self.chart = QChart()
-        self.axis = QBarCategoryAxis(self.chart)
-        self.categories = [str(i) for i in range(1, 32)]
+    def __init__(self, arg, arg2, week = None):
+        if week:
+            self.series = QBarSeries()
+            self.chart = QChart()
+            self.axis = QBarCategoryAxis(self.chart)
+            self.categories = [str(i) for i in range(7*(week-1) + 1, 7*week)]
+            self.barsets = []
+            for err in arg:
+                self.barsets.append(QBarSet(err))
+                freqList = []
+                for i in range(7*(week-1) + 1, 7*week + 1):
+                    if arg2[0] in arg[err] and arg2[1] in arg[err][arg2[0]]:
+                        key = None
+                        if i < 10:
+                            key = "0"+str(i)
+                        else: key = str(i)
+                        if key in arg[err][arg2[0]][arg2[1]]: freqList.append(arg[err][arg2[0]][arg2[1]][key])
+                        else: freqList.append(0)
+                    else:
+                        freqList.append(0)
+                self.barsets[-1].append(freqList)
+            for bset in self.barsets:
+                self.series.append(bset)
+            self.chart.addSeries(self.series)
+            self.axis.append(self.categories)
 
-        freqList = []
-        for i in range(1, 32):
-            if arg:
-                key = None
-                if i < 10:
-                    key = "0"+str(i)
-                else: key = str(i)
-                if key in arg: freqList.append(arg[key])
-                else: freqList.append(0)
-            else:
-                freqList.append(0)
-        self.set0.append(freqList)
-        self.series.append(self.set0)
-        self.chart.addSeries(self.series)
-        self.axis.append(self.categories)
+            self.chart.setTitle('Frequency Histogram')
+            self.chart.createDefaultAxes()
+            self.chart.setAxisX(self.axis, self.series)
+            self.chart.legend().setAlignment(Qt.AlignBottom)
 
-        self.chart.setTitle('Frequency Histogram')
-        self.chart.createDefaultAxes()
-        self.chart.setAxisX(self.axis, self.series)
-        #self.chart.legend().setEnabled(False)
-        self.chart.legend().setAlignment(Qt.AlignBottom)
+            self.cv = QChartView(self.chart)    
+        else:
+            self.set0 = QBarSet(arg2[0])
+            self.series = QBarSeries()
+            self.chart = QChart()
+            self.axis = QBarCategoryAxis(self.chart)
+            self.categories = [str(i) for i in range(1, 32)]
 
-        self.cv = QChartView(self.chart)
-    
+            freqList = []
+            for i in range(1, 32):
+                if arg:
+                    key = None
+                    if i < 10:
+                        key = "0"+str(i)
+                    else: key = str(i)
+                    if key in arg: freqList.append(arg[key])
+                    else: freqList.append(0)
+                else:
+                    freqList.append(0)
+            self.set0.append(freqList)
+            self.series.append(self.set0)
+            self.chart.addSeries(self.series)
+            self.axis.append(self.categories)
+
+            self.chart.setTitle('Frequency Histogram')
+            self.chart.createDefaultAxes()
+            self.chart.setAxisX(self.axis, self.series)
+            #self.chart.legend().setEnabled(False)
+            self.chart.legend().setAlignment(Qt.AlignBottom)
+
+            self.cv = QChartView(self.chart)
+        
 
 class Window(QMainWindow):
     def __init__(self):
@@ -145,6 +215,16 @@ class Window(QMainWindow):
         
         self.chbox1 = QCheckBox("Histogram", self)
         self.chbox1.move(120, 40)
+
+        self.chbox2 = QCheckBox("Prepare Weekly", self)
+        self.chbox2.move(20, 190)
+
+        self.weekCB = QComboBox(self)
+        self.weekCB.move(150, 190)
+        self.weekCB.addItem("Select Week from here")
+        self.weekCB.resize(300,chartRefreshBtn.height())
+        self.weekCB.addItems(["Week 1: Day 1 - 7", "Week 2: Day 8 - 14", "Week 3: Day 15 - 21", "Week 4: Day 22 - 28", "Week 5: Day 29 - 31"])
+        
         
         self.show()
         
@@ -160,15 +240,17 @@ class Window(QMainWindow):
 
 
         arg = None
-        print (self.yearSel.text())
-        print(self.yearSel.text() in self.data[self.errorCB.currentText()])
-        if self.yearSel.text() in self.data[self.errorCB.currentText()] and self.monthCB.currentText() in self.data[self.errorCB.currentText()][self.yearSel.text()]:
-            arg = self.data[self.errorCB.currentText()][self.yearSel.text()][self.monthCB.currentText()]
-            print("Valid Month Found")
+        self.ch = None
+        if(self.chbox2.checkState()):            
+            self.ch = BarChart(self.data, (self.yearSel.text(), self.monthCB.currentText()), self.weekCB.currentIndex())
+            #self.ch = BarChart(self.data, ("2017", "MAY"), 3)
         else:
-            print("Invalid Month Found")
-        
-        self.ch = BarChart(arg, (self.errorCB.currentText(),))
+            if self.yearSel.text() in self.data[self.errorCB.currentText()] and self.monthCB.currentText() in self.data[self.errorCB.currentText()][self.yearSel.text()]:
+                arg = self.data[self.errorCB.currentText()][self.yearSel.text()][self.monthCB.currentText()]
+                print("Valid Month Found")
+            else:
+                print("Invalid Month Found")
+            self.ch = BarChart(arg, (self.errorCB.currentText(),))
         
         self.chartWindow.setCentralWidget(self.ch.cv)
         self.chartWindow.show()
@@ -214,8 +296,8 @@ class Window(QMainWindow):
             self.table.show()
     def file_select(self):
         options = QFileDialog.Options()
-        options |= QFileDialog.DontUseNativeDialog
-        fileName, _ = QFileDialog.getOpenFileName(self,"QFileDialog.getOpenFileName()", "","All Files (*);;Python Files (*.py)", options=options)
+        #options |= QFileDialog.DontUseNativeDialog
+        fileName, _ = QFileDialog.getOpenFileName(self,"Select a log file", "","All Files (*);;Python Files (*.py)", options=options)
         if fileName:
             print("File Selected:",fileName)
             self.fileSelected = fileName
