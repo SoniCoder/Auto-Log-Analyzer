@@ -1,10 +1,13 @@
 import datetime
 import re
 import sys
+
 from PyQt5.QtWidgets import *
 from PyQt5.QtCore import *
 from PyQt5.QtGui import *
 from PyQt5.QtChart import *
+
+from net import *
 
 # test data 
 testDict = None
@@ -169,11 +172,15 @@ class Window(QMainWindow):
         exitAction = QAction("&Exit", self)
         exitAction.triggered.connect(self.close_application)
 
+        smailAction = QAction("&Send Mail", self)
+        smailAction.triggered.connect(self.send_mail)
+
         self.statusBar()
 
         mainMenu = self.menuBar()
         fileMenu = mainMenu.addMenu('&File')
         optionMenu = mainMenu.addMenu('&Options')
+        networkMenu = mainMenu.addMenu('&Network')
         fileMenu.addAction(extractAction)
         fileMenu.addAction(multifileAction)
         fileMenu.addAction(importPatAction)
@@ -183,7 +190,7 @@ class Window(QMainWindow):
         optionMenu.addAction(customRE)
         optionMenu.addAction(clearLogList)
         optionMenu.addAction(clearPatList)
-        
+        networkMenu.addAction(smailAction)
         self.design()
 
     def design(self):
@@ -420,8 +427,20 @@ class Window(QMainWindow):
         print("Image Saved")
         self.painter.end()
         return
-        
+
+    def send_mail(self):
+        self.mailer = Mailer()
 # Run Everything
+##def main():
+##    app = QApplication(sys.argv)
+##    print("Creating Primary Window Object")
+##    GUI = Window()
+##    print("Primary Window Object Created")
+##    app.exec_()
+##
+##if __name__ == '__main__':
+##    main()
+
 app = QApplication(sys.argv)
 print("Creating Primary Window Object")
 GUI = Window()
