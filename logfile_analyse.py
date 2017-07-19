@@ -1,11 +1,12 @@
+import datetime
+import re
 import sys
 from PyQt5.QtWidgets import *
 from PyQt5.QtCore import *
 from PyQt5.QtGui import *
 from PyQt5.QtChart import *
-import re
 
-# test data for 
+# test data 
 testDict = None
 
 
@@ -123,7 +124,9 @@ class Window(QMainWindow):
         self.data = {}
         self.fileSelected = ""
         self.files = []
+        self.patterns = []
         self.re = "TNS-\d{5}: .*"
+        self.patterns.append(self.re)
         
         super(Window, self).__init__()
         self.setGeometry(50, 50, 500, 400)
@@ -139,14 +142,30 @@ class Window(QMainWindow):
         multifileAction.setStatusTip('Select Multiple Log Files At Once')
         multifileAction.triggered.connect(self.multi_file_select)
 
+        importPatAction = QAction("&Import Patterns", self)
+        importPatAction.setStatusTip('Import Patterns from file')
+        importPatAction.triggered.connect(self.pat_import)
+
+        savePatAction = QAction("&Save Pattern List", self)
+        savePatAction.setStatusTip('Save Current Pattern List to File')
+        savePatAction.triggered.connect(self.pat_save)
+
         saveChartAction = QAction("&Save Chart", self)
         saveChartAction.setStatusTip('Save Chart As Image')
         saveChartAction.triggered.connect(self.save_chart)
         
-        customRE = QAction("&Enter Custom Expression", self)
+        customRE = QAction("&Enter custom expression", self)
         customRE.setStatusTip('Enter a custom regular expression')
         customRE.triggered.connect(self.custRE)
 
+        clearLogList = QAction("&Clear log list", self)
+        clearLogList.setStatusTip('Clears all logs from the list')
+        clearLogList.triggered.connect(self.clear_logs)
+
+        clearPatList = QAction("&Clear pattern list", self)
+        clearPatList.setStatusTip('Clears all patterns from the list')
+        clearPatList.triggered.connect(self.pat_clear)        
+        
         exitAction = QAction("&Exit", self)
         exitAction.triggered.connect(self.close_application)
 
@@ -157,9 +176,13 @@ class Window(QMainWindow):
         optionMenu = mainMenu.addMenu('&Options')
         fileMenu.addAction(extractAction)
         fileMenu.addAction(multifileAction)
+        fileMenu.addAction(importPatAction)
+        fileMenu.addAction(savePatAction)
         fileMenu.addAction(saveChartAction)
         fileMenu.addAction(exitAction)
         optionMenu.addAction(customRE)
+        optionMenu.addAction(clearLogList)
+        optionMenu.addAction(clearPatList)
         
         self.design()
 
@@ -195,7 +218,7 @@ class Window(QMainWindow):
         yrlbl = QLabel("Year-Month",self)
         yrlbl.move(20, 170)
         
-        self.yearSel = QLineEdit(self)
+        self.yearSel = QLineEdit(str(datetime.datetime.now().year),self)
         self.yearSel.move(120, 177)
         self.yearSel.resize(self.yearSel.minimumSizeHint())
 
@@ -231,8 +254,9 @@ class Window(QMainWindow):
     def custRE(self):
         text, okPressed = QInputDialog.getText(self, "Custom RE","Enter a valid Regular Expression", QLineEdit.Normal, "")
         if okPressed and text != '':
-            print("Using Regular Expression:",text)
-            self.re = text
+            print("Added Regular Expression:",text)
+            self.patterns.append(text)
+            self.refresh_patterns()
     def histogram(self):
         self.chartWindow = QMainWindow()
         self.chartWindow.setWindowTitle("Frequency Charts")
@@ -318,14 +342,40 @@ class Window(QMainWindow):
         if fileNames:
             print("Files Selected:",fileNames)
             self.files += fileNames
-        self.refresh_files()    
+        self.refresh_files()
+    def clear_logs(self):
+        self.files = []
+        self.refresh_files()
     def close_application(self):
         #print("whooaaaa so custom!!!")
         sys.exit()
 
 
     def pat_changed(self):
+        self.re = self.patCB.currentText()
         pass
+    def pat_clear(self):
+        self.patterns = []
+        self.refresh_patterns()
+
+    def pat_import(self):
+        options = QFileDialog.Options()
+        #options |= QFileDialog.DontUseNativeDialog
+        fileName, _ = QFileDialog.getOpenFileName(self,"Select a pattern file", "","All Files (*);;Pattern Files (*.pat)", options=options)
+        if fileName:
+            print("Pattern File Selected:",fileName)
+            f = open(fileName)
+            s = f.readline()
+            self.patterns += s.split("~")
+        self.refresh_patterns()
+    def pat_save(self):
+        text, okPressed = QInputDialog.getText(self, "Save Patterns","File Name", QLineEdit.Normal, "")
+        s = "~".join(self.patterns)
+        if okPressed and text != '':
+            f = open(text+".pat","w")
+            f.write(s)
+            print("Pattern File Saved:",text)
+            
     def file_changed(self):
         self.fileSelected = self.flCB.currentText()
 
@@ -340,19 +390,36 @@ class Window(QMainWindow):
             
         else:
             self.flCB.addItem("Add log file(s) using file menu")
+            self.fileSelected = ""
+
+    def refresh_patterns(self):
+        self.patCB.clear()
+
+        if self.patterns:
+            self.patCB.addItems(self.patterns)
+            
+            self.patCB.setCurrentIndex(len(self.patterns)-1)
+            self.re = self.patterns[-1]
+            
+        else:
+            self.patCB.addItem("Import patterns using file menu or enter custom using Options")
+            self.re = ""
+        
 
     def save_chart(self):
         print("Rendering and Saving Image")
-        im = QImage(1600,1200, QImage.Format_ARGB32)
-        painter = QPainter(im)
-        self.ch.cv.render(painter)
+        self.im = QImage(1600,1200, QImage.Format_ARGB32)
+        self.painter = QPainter(self.im)
+        self.ch.cv.render(self.painter)
         fileName = ""
-        print("Here")
+        print("Creating File Name")
         if(self.chbox2.checkState()):
             fileName = self.yearSel.text()+"-"+self.monthCB.currentText()+"-Week-"+str(self.weekCB.currentIndex())+".jpg"
         else:   fileName = self.yearSel.text()+"-"+self.monthCB.currentText()+".jpg"
-        im.save(fileName)
+        self.im.save(fileName)
         print("Image Saved")
+        self.painter.end()
+        return
         
 # Run Everything
 app = QApplication(sys.argv)
