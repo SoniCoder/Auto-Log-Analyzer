@@ -11,18 +11,33 @@ from email.mime.multipart import MIMEMultipart
 
 class Mailer(QMainWindow):
     def __init__(self):
+        self.attachments = []
+        
         super(Mailer, self).__init__()
         self.resize(300, 500)
         self.setWindowTitle("Mailer")
         self.setWindowIcon(QIcon('icon.png'))
 
+        attachfileAction = QAction("&Attach", self)
+        attachfileAction.setStatusTip('Add attachment(s)')
+        attachfileAction.triggered.connect(self.attach_files)
+
         self.statusBar()
         mainMenu = self.menuBar()
         fileMenu = mainMenu.addMenu('&File')
-
+        fileMenu.addAction(attachfileAction)
+        
         self.design()
         
         self.show()
+
+    def attach_files(self):
+        options = QFileDialog.Options()
+        fileNames, _ = QFileDialog.getOpenFileNames(self,"Select attachment(s)", "","All Files (*);;JPG Files (*.jpg)", options=options)
+        if fileNames:
+            print("Files Selected:",fileNames)
+            self.attachments += fileNames
+        self.refresh_attachments()
     def design(self):
         fromlbl = QLabel("From:",self)
         fromlbl.move(20, 40)
@@ -86,7 +101,20 @@ class Mailer(QMainWindow):
         self.sendBtn.move(20, 460)
         self.sendBtn.resize(self.sendBtn.minimumSizeHint())
         self.sendBtn.clicked.connect(self.send)
+    def refresh_attachments(self):
+        self.AttachCB.clear()
+        
+        if self.attachments:
+            self.AttachCB.addItems(self.attachments)
+            
+            self.AttachCB.setCurrentIndex(len(self.attachments)-1)            
+        else:
+            self.flCB.addItem("No Attachments")
     def send(self):
+        img_data_set =[]
+        for f in self.attachments:
+            img_data_set.append(open(f, 'rb').read())
+##        img_data = open(ImgFileName, 'rb').read()
         msg = MIMEMultipart()
         msg['Subject'] = self.SubField.text()
         msg['From'] = self.FromField.text()
@@ -94,6 +122,9 @@ class Mailer(QMainWindow):
 
         text = MIMEText(self.TextField.toPlainText())
         msg.attach(text)
+        for img_i in range(len(img_data_set)):
+            image = MIMEImage(img_data_set[img_i], name=os.path.basename(self.attachments[img_i]))
+            msg.attach(image)
 ##        image = MIMEImage(img_data, name=os.path.basename(ImgFileName))
 ##        msg.attach(image)
 
