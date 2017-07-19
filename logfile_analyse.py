@@ -347,10 +347,12 @@ class Window(QMainWindow):
         painter = QPainter(im)
         self.ch.cv.render(painter)
         fileName = ""
+        print("Here")
         if(self.chbox2.checkState()):
-            fileName = self.yearSel.text()+"-"+self.monthCB.currentText()+"-"+self.weekCB.currentText()+".jpg"
+            fileName = self.yearSel.text()+"-"+self.monthCB.currentText()+"-Week-"+str(self.weekCB.currentIndex())+".jpg"
         else:   fileName = self.yearSel.text()+"-"+self.monthCB.currentText()+".jpg"
         im.save(fileName)
+        print("Image Saved")
         
 # Run Everything
 app = QApplication(sys.argv)
