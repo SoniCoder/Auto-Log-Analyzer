@@ -8,6 +8,38 @@ from PyQt5.QtGui import *
 from PyQt5.QtChart import *
 
 from net import *
+from config import *
+
+dataDict = {}
+
+def analyze():
+    if globals()['LOG_FILE']:
+        if(globals()['COMBINE_FILES']):
+            for f in globals()['LOG_FILES']:   
+                inspect(f, globals()['PATTERN'], globals()['HISTOGRAM'], globals()['dataDict'])
+        else:
+            inspect(globals()['LOG_FILE'], globals()['PATTERN'], globals()['HISTOGRAM'], globals()['dataDict'])
+            
+
+def histogram():
+    global chartWindow, chart
+    chartWindow = QMainWindow()
+    chartWindow.setWindowTitle("Frequency Charts")
+    chartWindow.resize(800, 600)
+    arg = None
+    chart = None
+    if(WEEKLY_DISPLAY):            
+        chart = BarChart(globals()['dataDict'], (globals()['YEAR'], globals()['MONTH']), globals()['WEEK'])
+    else:     
+        if globals()['YEAR'] in globals()['dataDict'][globals()['ERROR']] and globals()['MONTH'] in globals()['dataDict'][globals()['ERROR']][globals()['YEAR']]:
+            arg = globals()['dataDict'][globals()['ERROR']][globals()['YEAR']][globals()['MONTH']]
+            print("Valid Month Found")
+        else:
+            print("Invalid Month Found")
+        chart = BarChart(arg, (globals()['ERROR'],))
+    
+    chartWindow.setCentralWidget(chart.cv)
+    chartWindow.show()
 
 def inspect(f,rexpr, hist, ocDict):
     global testDict
@@ -51,6 +83,21 @@ def inspect(f,rexpr, hist, ocDict):
                 ocDict[res] = {"count":1, latestYear:{latestMonth: {latestDay: 1}}}   
     testDict = ocDict
     #print(ocDict)
+    return
+
+def save_chart():
+    print("Rendering and Saving Image")
+    im = QImage(1600,1200, QImage.Format_ARGB32)
+    painter = QPainter(im)
+    globals()['chart'].cv.render(painter)
+    fileName = ""
+    print("Creating File Name")
+    if(globals()['WEEKLY_DISPLAY']):
+        fileName = globals()['YEAR']+"-"+globals()['MONTH']+"-Week-"+str(globals()['WEEK'])+".jpg"
+    else:   fileName = globals()['YEAR']+"-"+globals()['MONTH']+".jpg"
+    im.save(fileName)
+    print("Image Saved")
+    painter.end()
     return
 
 class BarChart:
@@ -119,14 +166,7 @@ class BarChart:
         
 
 class Window(QMainWindow):
-    def __init__(self):
-        self.data = {}
-        self.fileSelected = ""
-        self.files = []
-        self.patterns = []
-        self.re = "TNS-\d{5}: .*"
-        self.patterns.append(self.re)
-        
+    def __init__(self):        
         super(Window, self).__init__()
         self.setGeometry(50, 50, 500, 400)
         self.setWindowTitle("Performance Analyzer")
@@ -151,7 +191,7 @@ class Window(QMainWindow):
 
         saveChartAction = QAction("&Save Chart", self)
         saveChartAction.setStatusTip('Save Chart As Image')
-        saveChartAction.triggered.connect(self.save_chart)
+        saveChartAction.triggered.connect(save_chart)
         
         customRE = QAction("&Enter custom expression", self)
         customRE.setStatusTip('Enter a custom regular expression')
@@ -214,7 +254,7 @@ class Window(QMainWindow):
 
         self.patCB = QComboBox(self)
         self.patCB.move(150, 75)
-        self.patCB.addItem("TNS-\d{5}: .*")
+        self.patCB.addItem(globals()['PATTERN'])
         self.patCB.resize(300,chartRefreshBtn.height())
         self.patCB.currentIndexChanged.connect(self.pat_changed)
 
@@ -258,85 +298,55 @@ class Window(QMainWindow):
         text, okPressed = QInputDialog.getText(self, "Custom RE","Enter a valid Regular Expression", QLineEdit.Normal, "")
         if okPressed and text != '':
             print("Added Regular Expression:",text)
-            self.patterns.append(text)
+            globals()['PATTERNS'].append(text)
             self.refresh_patterns()
-    def histogram(self):
-        self.chartWindow = QMainWindow()
-        self.chartWindow.setWindowTitle("Frequency Charts")
-        self.chartWindow.resize(800, 600)
-
-
-        arg = None
-        self.ch = None
-        if(self.chbox2.checkState()):            
-            self.ch = BarChart(self.data, (self.yearSel.text(), self.monthCB.currentText()), self.weekCB.currentIndex())
-            #self.ch = BarChart(self.data, ("2017", "MAY"), 3)
-        else:
-            if self.yearSel.text() in self.data[self.errorCB.currentText()] and self.monthCB.currentText() in self.data[self.errorCB.currentText()][self.yearSel.text()]:
-                arg = self.data[self.errorCB.currentText()][self.yearSel.text()][self.monthCB.currentText()]
-                print("Valid Month Found")
-            else:
-                print("Invalid Month Found")
-            self.ch = BarChart(arg, (self.errorCB.currentText(),))
-        
-        self.chartWindow.setCentralWidget(self.ch.cv)
-        self.chartWindow.show()
+    
     def analyze(self):
-        if self.fileSelected:
-            #print("Starting analysis")
-            self.data = {}
-            if(self.chbox3.checkState()):
-                for f in self.files:   
-                    inspect(f, self.re, self.chbox1.checkState(), self.data)
-            else:
-                inspect(self.fileSelected, self.re, self.chbox1.checkState(), self.data)
+        self.reload_vars()
+        analyze()
+        for i in globals()['dataDict']:
+            if i!="count":
+                self.errorCB.addItem(i)
+        self.window = QWidget()
+        self.table = QTableWidget(self.window)
+        self.tableItem = QTableWidgetItem()
+        
 
-            ocDict = self.data
-            
-            if self.chbox1.checkState():
-                for i in ocDict:
-                    if i!="count":
-                        self.errorCB.addItem(i)
-            self.window = QWidget()
-            self.table = QTableWidget(self.window)
-            self.tableItem = QTableWidgetItem()
-            
+        # initiate UI
+        w_width = 800
+        w_height = 300
+        mb_height = 0
+        #print("I did analysis")
+        self.window.setWindowTitle("Error Frequency Table")
+        self.window.resize(w_width, w_height)
+        self.table.move(0, mb_height)
+        self.table.resize(w_width, w_height-mb_height)
+        self.table.setRowCount(len(globals()['dataDict'])+1)
+        self.table.setColumnCount(2)
+        self.table.setColumnWidth(0, w_width/2)
+        self.table.setColumnWidth(1, w_width/2)
 
-            # initiate UI
-            w_width = 800
-            w_height = 300
-            mb_height = 0
-            #print("I did analysis")
-            self.window.setWindowTitle("Error Frequency Table")
-            self.window.resize(w_width, w_height)
-            self.table.move(0, mb_height)
-            self.table.resize(w_width, w_height-mb_height)
-            self.table.setRowCount(len(ocDict)+1)
-            self.table.setColumnCount(2)
-            self.table.setColumnWidth(0, w_width/2)
-            self.table.setColumnWidth(1, w_width/2)
+        self.table.setHorizontalHeaderLabels("Error Name;Frequency;".split(";"))
 
-            self.table.setHorizontalHeaderLabels("Error Name;Frequency;".split(";"))
-
-            curRow = 0
-            total = 0
-            # set data
-            for i in ocDict:
-                self.table.setItem(curRow,0, QTableWidgetItem(i))
-                self.table.setItem(curRow,1, QTableWidgetItem(str(ocDict[i]["count"])))
-                total += ocDict[i]["count"]
-                curRow += 1
-            self.table.setItem(curRow,0, QTableWidgetItem("Total Issues"))
-            self.table.setItem(curRow,1, QTableWidgetItem(str(total)))
-            self.window.show()
-            self.table.show()
+        curRow = 0
+        total = 0
+        # set data
+        for i in globals()['dataDict']:
+            self.table.setItem(curRow,0, QTableWidgetItem(i))
+            self.table.setItem(curRow,1, QTableWidgetItem(str(globals()['dataDict'][i]["count"])))
+            total += globals()['dataDict'][i]["count"]
+            curRow += 1
+        self.table.setItem(curRow,0, QTableWidgetItem("Total Issues"))
+        self.table.setItem(curRow,1, QTableWidgetItem(str(total)))
+        self.window.show()
+        self.table.show()
     def file_select(self):
         options = QFileDialog.Options()
         #options |= QFileDialog.DontUseNativeDialog
         fileName, _ = QFileDialog.getOpenFileName(self,"Select a log file", "","All Files (*);;Log Files (*.log)", options=options)
         if fileName:
             print("File Selected:",fileName)
-            self.files.append(fileName)
+            globals()['LOG_FILES'].append(fileName)
         self.refresh_files()
     def multi_file_select(self):
         options = QFileDialog.Options()
@@ -344,21 +354,19 @@ class Window(QMainWindow):
         fileNames, _ = QFileDialog.getOpenFileNames(self,"Select a log file", "","All Files (*);;Log Files (*.log)", options=options)
         if fileNames:
             print("Files Selected:",fileNames)
-            self.files += fileNames
+            globals()['LOG_FILES'] += fileNames
         self.refresh_files()
     def clear_logs(self):
-        self.files = []
+        globals()['LOG_FILES'] = []
         self.refresh_files()
     def close_application(self):
-        #print("whooaaaa so custom!!!")
         sys.exit()
 
-
     def pat_changed(self):
-        self.re = self.patCB.currentText()
-        pass
+        globals()['PATTERN'] = self.patCB.currentText()
+        
     def pat_clear(self):
-        self.patterns = []
+        globals()['PATTERNS'] = []
         self.refresh_patterns()
 
     def pat_import(self):
@@ -369,70 +377,54 @@ class Window(QMainWindow):
             print("Pattern File Selected:",fileName)
             f = open(fileName)
             s = f.readline()
-            self.patterns += s.split("~")
+            globals()['PATTERNS'] += s.split("~")
         self.refresh_patterns()
     def pat_save(self):
         text, okPressed = QInputDialog.getText(self, "Save Patterns","File Name", QLineEdit.Normal, "")
-        s = "~".join(self.patterns)
+        s = "~".join(globals()['PATTERNS'])
         if okPressed and text != '':
             f = open(text+".pat","w")
             f.write(s)
             print("Pattern File Saved:",text)
             
     def file_changed(self):
-        self.fileSelected = self.flCB.currentText()
+        globals()['LOG_FILE'] = self.flCB.currentText()
 
+    def histogram(self):
+        self.reload_vars()
+        histogram()
+    def reload_vars(self):
+        globals()['WEEKLY_DISPLAY'] = self.chbox2.checkState()
+        globals()['YEAR'] = self.yearSel.text()
+        globals()['MONTH'] = self.monthCB.currentText()
+        globals()['WEEK'] = self.weekCB.currentIndex()
+        globals()['ERROR'] = self.errorCB.currentText()
+        globals()['COMBINE_FILES'] = self.chbox3.checkState()
     def refresh_files(self):
         self.flCB.clear()
         
-        if self.files:
-            self.flCB.addItems(self.files)
+        if globals()['LOG_FILES']:
+            self.flCB.addItems(globals()['LOG_FILES'])
             
-            self.flCB.setCurrentIndex(len(self.files)-1)
-            self.fileSelected = self.files[-1]
+            self.flCB.setCurrentIndex(len(globals()['LOG_FILES'])-1)
+            globals()['LOG_FILE'] = globals()['LOG_FILES'][-1]
             
         else:
             self.flCB.addItem("Add log file(s) using file menu")
-            self.fileSelected = ""
+            globals()['LOG_FILE'] = ""
 
     def refresh_patterns(self):
         self.patCB.clear()
 
-        if self.patterns:
-            self.patCB.addItems(self.patterns)
+        if globals()['PATTERNS']:
+            self.patCB.addItems(globals()['PATTERNS'])
             
-            self.patCB.setCurrentIndex(len(self.patterns)-1)
-            self.re = self.patterns[-1]
+            self.patCB.setCurrentIndex(len(globals()['PATTERNS'])-1)
+            globals()['PATTERN'] = globals()['PATTERNS'][-1]
             
         else:
             self.patCB.addItem("Import patterns using file menu or enter custom using Options")
-            self.re = ""
-        
-
-    def save_chart(self):
-        print("Rendering and Saving Image")
-        self.im = QImage(1600,1200, QImage.Format_ARGB32)
-        self.painter = QPainter(self.im)
-        self.ch.cv.render(self.painter)
-        fileName = ""
-        print("Creating File Name")
-        if(self.chbox2.checkState()):
-            fileName = self.yearSel.text()+"-"+self.monthCB.currentText()+"-Week-"+str(self.weekCB.currentIndex())+".jpg"
-        else:   fileName = self.yearSel.text()+"-"+self.monthCB.currentText()+".jpg"
-        self.im.save(fileName)
-        print("Image Saved")
-        self.painter.end()
-        return
+            globals()['PATTERN'] = ""
 
     def send_mail(self):
         self.mailer = Mailer()
-# Run Everything
-##def main():
-##    app = QApplication(sys.argv)
-##    print("Creating Primary Window Object")
-##    GUI = Window()
-##    print("Primary Window Object Created")
-##    app.exec_()
-##
-##if __name__ == '__main__':
-##    main()
