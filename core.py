@@ -33,13 +33,12 @@ def histogram():
     else:     
         if globals()['YEAR'] in globals()['dataDict'][globals()['ERROR']] and globals()['MONTH'] in globals()['dataDict'][globals()['ERROR']][globals()['YEAR']]:
             arg = globals()['dataDict'][globals()['ERROR']][globals()['YEAR']][globals()['MONTH']]
-            print("Valid Month Found")
+            print("Month Entry Found")
         else:
-            print("Invalid Month Found")
+            print("Month Entry Not Found")
         chart = BarChart(arg, (globals()['ERROR'],))
     
     chartWindow.setCentralWidget(chart.cv)
-    chartWindow.show()
 
 def inspect(f,rexpr, hist, ocDict):
     global testDict
@@ -89,6 +88,7 @@ def save_chart():
     print("Rendering and Saving Image")
     im = QImage(1600,1200, QImage.Format_ARGB32)
     painter = QPainter(im)
+    globals()['chartWindow'].show()
     globals()['chart'].cv.render(painter)
     fileName = ""
     print("Creating File Name")
@@ -97,8 +97,9 @@ def save_chart():
     else:   fileName = globals()['YEAR']+"-"+globals()['MONTH']+".jpg"
     im.save(fileName)
     print("Image Saved")
+    globals()['chartWindow'].hide()
     painter.end()
-    return
+    return fileName
 
 class BarChart:
     def __init__(self, arg, arg2, week = None):
@@ -393,6 +394,7 @@ class Window(QMainWindow):
     def histogram(self):
         self.reload_vars()
         histogram()
+        globals()['chartWindow'].show()
     def reload_vars(self):
         globals()['WEEKLY_DISPLAY'] = self.chbox2.checkState()
         globals()['YEAR'] = self.yearSel.text()

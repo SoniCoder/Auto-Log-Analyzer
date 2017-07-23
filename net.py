@@ -9,10 +9,32 @@ from email.mime.text import MIMEText
 from email.mime.image import MIMEImage
 from email.mime.multipart import MIMEMultipart
 
+from config import *
+
+def send(pswd, attachments):
+    img_data_set =[]
+    for f in attachments:
+        img_data_set.append(open(f, 'rb').read())
+    msg = MIMEMultipart()
+    msg['Subject'] = globals()['SUBJECT']
+    msg['From'] = globals()['FROM']
+    msg['To'] = globals()['TO']
+    text = MIMEText(globals()['TEXT'])
+    msg.attach(text)
+    for img_i in range(len(img_data_set)):
+        image = MIMEImage(img_data_set[img_i], name=os.path.basename(attachments[img_i]))
+        msg.attach(image)
+
+    s = smtplib.SMTP(globals()['SERVER'], globals()['PORT'])
+    s.ehlo()
+    s.starttls()
+    s.ehlo()
+    s.login(globals()['FROM'], pswd)
+    s.sendmail(globals()['FROM'], globals()['TO'], msg.as_string())
+    s.quit()
+
 class Mailer(QMainWindow):
-    def __init__(self):
-        self.attachments = []
-        
+    def __init__(self):        
         super(Mailer, self).__init__()
         self.resize(300, 500)
         self.setWindowTitle("Mailer")
@@ -36,7 +58,7 @@ class Mailer(QMainWindow):
         fileNames, _ = QFileDialog.getOpenFileNames(self,"Select attachment(s)", "","All Files (*);;JPG Files (*.jpg)", options=options)
         if fileNames:
             print("Files Selected:",fileNames)
-            self.attachments += fileNames
+            globals()['ATTACHMENTS'] += fileNames
         self.refresh_attachments()
     def design(self):
         fromlbl = QLabel("From:",self)
@@ -104,35 +126,22 @@ class Mailer(QMainWindow):
     def refresh_attachments(self):
         self.AttachCB.clear()
         
-        if self.attachments:
-            self.AttachCB.addItems(self.attachments)
+        if globals()['ATTACHMENTS']:
+            self.AttachCB.addItems(globals()['ATTACHMENTS'])
             
-            self.AttachCB.setCurrentIndex(len(self.attachments)-1)            
+            self.AttachCB.setCurrentIndex(len(globals()['ATTACHMENTS'])-1)            
         else:
             self.flCB.addItem("No Attachments")
+
+    def reload_vars(self):
+        globals()['SUBJECT'] = self.SubField.text()
+        globals()['FROM'] = self.FromField.text()
+        globals()['TO'] = self.ToField.text()
+        globals()['TEXT'] = self.TextField.toPlainText()
+        globals()['SERVER'] = self.ServerField.text()
+        globals()['PORT'] = self.PortField.text()
+        globals()['PASSWORD'] = self.PassField.text()
+
     def send(self):
-        img_data_set =[]
-        for f in self.attachments:
-            img_data_set.append(open(f, 'rb').read())
-##        img_data = open(ImgFileName, 'rb').read()
-        msg = MIMEMultipart()
-        msg['Subject'] = self.SubField.text()
-        msg['From'] = self.FromField.text()
-        msg['To'] = self.ToField.text()
-
-        text = MIMEText(self.TextField.toPlainText())
-        msg.attach(text)
-        for img_i in range(len(img_data_set)):
-            image = MIMEImage(img_data_set[img_i], name=os.path.basename(self.attachments[img_i]))
-            msg.attach(image)
-##        image = MIMEImage(img_data, name=os.path.basename(ImgFileName))
-##        msg.attach(image)
-
-        s = smtplib.SMTP(self.ServerField.text(), self.PortField.text())
-        s.ehlo()
-        s.starttls()
-        s.ehlo()
-        s.login(self.FromField.text(), self.PassField.text())
-        s.sendmail(self.FromField.text(), self.ToField.text(), msg.as_string())
-        s.quit()
-        
+        self.reload_vars()
+        send(globals()['PASSWORD'], globals()['ATTACHMENTS'])        
