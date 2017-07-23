@@ -1,3 +1,4 @@
+import datetime
 import getpass
 import sys
 
@@ -14,10 +15,16 @@ def main():
         print("Primary Window Object Created")
         sys.exit(app.exec_())
     else:
-        analyze()
-        histogram()
-        fileName = save_chart()
-        pswd = getpass.getpass("Password:")
-        #send(pswd, [fileName])
+        last_time = datetime.datetime.min
+        time_delta = datetime.timedelta(minutes = globals()['TIME_DELTA'])
+        while(True):
+            if(datetime.datetime.now() - last_time > time_delta):
+                last_time = datetime.datetime.now()
+                print("Executing Procedure")                
+                analyze()
+                histogram()
+                fileName = save_chart()
+                if(not globals()["PASSWORD"]): globals()["PASSWORD"] = getpass.getpass("Password:")
+                send(globals()["PASSWORD"], [fileName])
 if __name__ == '__main__':
     main()

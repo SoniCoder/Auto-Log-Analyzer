@@ -17,6 +17,10 @@ MONTH = 'JAN'
 WEEK = 3
 ERROR = None
 
+# Scheduler TIME_DELTA (in minutes)
+TIME_DELTA = 0.5
+
+
 # Mailer Options
 ATTACHMENTS = []
 SUBJECT = "Test Subject"
