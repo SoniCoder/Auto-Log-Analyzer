@@ -60,6 +60,11 @@ class Mailer(QMainWindow):
             print("Files Selected:",fileNames)
             globals()['ATTACHMENTS'] += fileNames
         self.refresh_attachments()
+		
+    def clear(self):
+    #Implement
+        pass
+		
     def design(self):
         fromlbl = QLabel("From:",self)
         fromlbl.move(20, 40)
@@ -123,6 +128,12 @@ class Mailer(QMainWindow):
         self.sendBtn.move(20, 460)
         self.sendBtn.resize(self.sendBtn.minimumSizeHint())
         self.sendBtn.clicked.connect(self.send)
+		
+        self.clearBtn = QPushButton("Clear",self)
+        self.clearBtn.move(100, 460)
+        self.clearBtn.resize(self.sendBtn.minimumSizeHint())
+        self.clearBtn.clicked.connect(self.clear)
+		
     def refresh_attachments(self):
         self.AttachCB.clear()
         
