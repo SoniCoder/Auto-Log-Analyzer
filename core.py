@@ -167,7 +167,10 @@ class BarChart:
         
 
 class Window(QMainWindow):
-    def __init__(self):        
+    def __init__(self):
+        globals()['LOG_FILES'] = []
+        globals()['LOG_FILE']= ""
+        
         super(Window, self).__init__()
         self.setGeometry(50, 50, 500, 400)
         self.setWindowTitle("Performance Analyzer")

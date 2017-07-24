@@ -62,9 +62,16 @@ class Mailer(QMainWindow):
         self.refresh_attachments()
 		
     def clear(self):
-    #Implement
-        pass
-		
+        globals()['ATTACHMENTS'] = []
+        self.refresh_attachments()
+        self.SubField.setText("")
+        self.FromField.setText("")
+        self.ToField.setText("")
+        self.TextField.setText("")
+        self.ServerField.setText("")
+        self.PortField.setText("")
+        self.PassField.setText("")
+    		
     def design(self):
         fromlbl = QLabel("From:",self)
         fromlbl.move(20, 40)
@@ -142,7 +149,7 @@ class Mailer(QMainWindow):
             
             self.AttachCB.setCurrentIndex(len(globals()['ATTACHMENTS'])-1)            
         else:
-            self.flCB.addItem("No Attachments")
+            self.AttachCB.addItem("No Attachments")
 
     def reload_vars(self):
         globals()['SUBJECT'] = self.SubField.text()
