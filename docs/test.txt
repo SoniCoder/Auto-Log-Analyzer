@@ -11,3 +11,7 @@ save graph in format of year/month/week
 
 populate year this year - done
 pattern manipulation module - done
+
+
+max time
+take config as param

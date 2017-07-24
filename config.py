@@ -17,9 +17,9 @@ MONTH = 'JAN'
 WEEK = 3
 ERROR = None
 
-# Scheduler TIME_DELTA (in minutes)
+# Scheduler TIME_DELTA, MAX_DURATION (in minutes)
 TIME_DELTA = 0.5
-
+MAX_DURATION = 2
 
 # Mailer Options
 ATTACHMENTS = []
