@@ -27,6 +27,6 @@ def main():
                 histogram()
                 fileName = save_chart()
                 if(not globals()["PASSWORD"]): globals()["PASSWORD"] = getpass.getpass("Password:")
-                #send(globals()["PASSWORD"], [fileName])
+                send(globals()["PASSWORD"], [fileName])
 if __name__ == '__main__':
     main()
