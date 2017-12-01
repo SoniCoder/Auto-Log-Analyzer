@@ -1,0 +1,3 @@
+Pyinstaller can be used to create a more compact standalone distributable.
+
+A sample template has been provided in the program folder by the name of Bundle ALA.bat

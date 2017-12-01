@@ -1,3 +1,13 @@
+"""
+Author: Hritik Soni
+
+Description:
+
+This module is responsible for all functioning including interface and its design.
+
+"""
+
+
 import datetime
 import importlib
 import re
@@ -8,12 +18,17 @@ from PyQt5.QtCore import *
 from PyQt5.QtGui import *
 from PyQt5.QtChart import *
 
-from net import *
+from net import * # For mailer functionality
 from config import *
 
+
+# This Dictionary will contain all error related information grabbed from the alert logs
 dataDict = {}
 
 def analyze():
+    """
+    This Procedure calls inspect function on all log files entered by the user.
+    """
     if globals()['LOG_FILE']:
         if(globals()['COMBINE_FILES']):
             for f in globals()['LOG_FILES']:   
@@ -23,6 +38,9 @@ def analyze():
             
 
 def histogram():
+    """
+    This Procedure shows a chart by collecting information from globals and calling BarChart constructor
+    """
     global chartWindow, chart
     chartWindow = QMainWindow()
     chartWindow.setWindowTitle("Frequency Charts")
@@ -42,6 +60,9 @@ def histogram():
     chartWindow.setCentralWidget(chart.cv)
 
 def inspect(f,rexpr, hist, ocDict):
+    """
+    This Procedure is actually responsible for collecting all error information from a single log file and populating the data dictionary.
+    """
     global testDict
     print("Opening File")
     f = open(f)
@@ -86,6 +107,9 @@ def inspect(f,rexpr, hist, ocDict):
     return
 
 def save_chart():
+    """
+    This Procedure saves an image of the chart window with an appropriate filename.
+    """
     print("Rendering and Saving Image")
     im = QImage(1600,1200, QImage.Format_ARGB32)
     painter = QPainter(im)
@@ -103,6 +127,9 @@ def save_chart():
     return fileName
 
 class BarChart:
+    """
+    This class plots BarCharts using QChart and data dictionary.
+    """
     def __init__(self, arg, arg2, week = None):
         if week:
             self.series = QBarSeries()
@@ -168,6 +195,9 @@ class BarChart:
         
 
 class Window(QMainWindow):
+    """
+    This class is the first window that is shown and contains all controls/functions for the manual GUI mode.
+    """
     def __init__(self):
         globals()['LOG_FILES'] = []
         globals()['LOG_FILE']= ""

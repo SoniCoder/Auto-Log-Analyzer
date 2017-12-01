@@ -1,5 +1,22 @@
-import datetime
-import getpass
+"""
+AUTHOR: Hritik Soni
+
+Description: Executable Module of the project
+
+Pass this module to python without argument "gui" to run the program in GUI manual mode.
+
+Pass this module to python without any arguments to run the program in automatic mode.
+
+Example:
+
+python manage.py gui
+python manage.py
+
+"""
+
+
+import datetime #Datetime module for Mail Scheduler
+import getpass #Retrieve Mail Password from user in commandline mode
 import sys
 
 from core import *
@@ -16,6 +33,10 @@ def main():
         print("Primary Window Object Created")
         sys.exit(app.exec_())
     else:
+        """
+        The following code is responsible for automatic mode.
+        It also has implementation for the scheduler
+        """
         end_time = datetime.datetime.now() + datetime.timedelta(minutes = globals()['MAX_DURATION'])
         last_time = datetime.datetime.min
         time_delta = datetime.timedelta(minutes = globals()['TIME_DELTA'])

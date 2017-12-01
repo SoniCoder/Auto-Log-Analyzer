@@ -1,0 +1,30 @@
+Pre-requisites:
+
+1. To use the mail functionality, make sure you have a working internet connection.
+2. You need to have oracle alert logs somewhere on your local machine.
+3. Make sure you have the required VC++ Redistributables. They are also provided in the root directory of this bundle.
+
+How to run:
+
+1. To run in gui mode, run "run program gui.bat" file in the program folder.
+2. To run in automatic mode, run "run program.bat" file in the program folder.
+
+Usage:
+
+I. Manual (GUI) mode
+
+1. After opening the application, you have to first select all the log files which you want to analyze. You can select one or more log files using the file menu.
+2. The default pattern is specified already as "TNS-\d{5}:.*" but you can add your own pattern using Options menu. There are also options available in the file menu for saving and loading patterns using file.
+3. The Combine files checkbox is used to determine whether you want to combine the information in all the log files specified or not.
+4. Next you need specify which year and which month information you are interested in.
+5. For weekly chart, select "Prepare weekly" checkbox and an appropriate week.
+6. Finally Click on "Show Histogram" to see the prepared chart.
+7. You can also use the File menu for saving the chart as an image file.
+8. Using the Network menu to open the Mailer interface for sending the images as mail over the internet.
+
+II. Automatic (CLI) mode
+
+1. Make sure all entries are correct inside the configuration module (config.py). The module can be located inside program folder.
+2. You can run CLI mode by passing manage.py to python without any arguments or using the provided batch file.
+3. It will ask you for your mail password.
+4. Every few minutes (specified in config module) it will shoot a mail of the latest capture.

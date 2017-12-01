@@ -1,17 +1,36 @@
+"""
+Author: Hritik Soni
+
+Description:
+
+This module has implementation of the Mailer functionality.
+
+Both automatic and manual modes uses this module.
+
+"""
+
+# Importing PyQt libs for GUI
 from PyQt5.QtWidgets import *
 from PyQt5.QtCore import *
 from PyQt5.QtGui import *
 from PyQt5.QtChart import *
 
 import os
+
+# Module for helping with mailing
 import smtplib
 from email.mime.text import MIMEText
 from email.mime.image import MIMEImage
 from email.mime.multipart import MIMEMultipart
 
+
+# Load everything from config file for automatic mode 
 from config import *
 
 def send(pswd, attachments):
+    """
+    This function actually send the mail using information available in global vars
+    """
     img_data_set =[]
     for f in attachments:
         img_data_set.append(open(f, 'rb').read())
@@ -34,7 +53,14 @@ def send(pswd, attachments):
     s.quit()
 
 class Mailer(QMainWindow):
+    """
+    This class creates the interface for sending mails in manual mode.
+
+    """
     def __init__(self):        
+        """
+        Class constructor for setting up design and interface
+        """
         super(Mailer, self).__init__()
         self.resize(300, 500)
         self.setWindowTitle("Mailer")

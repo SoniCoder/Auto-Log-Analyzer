@@ -1,5 +1,16 @@
+"""
+Author: Hritik Soni
+
+Description:
+
+This module is used for functioning of automatic mode.
+
+All variable mentioned here will be passed to various procedures in the core module.
+
+"""
+
 # Log File locations
-LOG_FILE = "C:\\Users\\1022285\\Documents\\Database Logs\\alert_mydprd.log"
+LOG_FILE = "C:\\Users\\1022285\\WorkArea\\Database Logs\\alert_mydprd.log"
 LOG_FILES = []
 LOG_FILES.append(LOG_FILE)
 COMBINE_FILES = True
