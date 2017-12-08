@@ -35,13 +35,13 @@ MAX_DURATION = 2
 # Mailer Options
 ATTACHMENTS = []
 SUBJECT = "Test Subject"
-FROM = "Hritik.Soni@jda.com"
+FROM = "hothritik1@gmail.com"
 TO = "f2014480@pilani.bits-pilani.ac.in"
 TEXT = "Test Content"
-SERVER = "mailout.jdadelivers.com"
-PORT = "25"
+SERVER = "smtp.gmail.com"
+PORT = "587"
 PASSWORD = ""
-USE_TLS = False # JDA Security Doesn't Require TLS
+USE_TLS = True
 
 # Turn this option to true if you always want to run in auto mode
 FORCE_AUTO = False

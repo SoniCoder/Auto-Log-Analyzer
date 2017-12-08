@@ -1,0 +1,6 @@
+Using the Mail Tool inside the GUI mode is very straightforward. You simply need to open the Network Menu and enter all the details.
+
+For automatic mode, edit the config.py file and under the mailer options enter all the details.
+Set USE_TLS to true in case the mail server requires TLS authentication.
+
+Under etc folder sample config files have been provided.

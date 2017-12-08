@@ -45,10 +45,11 @@ def send(pswd, attachments):
         msg.attach(image)
 
     s = smtplib.SMTP(globals()['SERVER'], globals()['PORT'])
-    s.ehlo()
-    s.starttls()
-    s.ehlo()
-    s.login(globals()['FROM'], pswd)
+    if globals()['USE_TLS']:
+        s.ehlo()
+        s.starttls()
+        s.ehlo()
+        s.login(globals()['FROM'], pswd)
     s.sendmail(globals()['FROM'], globals()['TO'], msg.as_string())
     s.quit()
 

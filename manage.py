@@ -47,7 +47,7 @@ def main():
                 analyze()
                 histogram()
                 fileName = save_chart()
-                if(not globals()["PASSWORD"]): globals()["PASSWORD"] = getpass.getpass("Password:")
+                if(not globals()["PASSWORD"] and globals()['USE_TLS']): globals()["PASSWORD"] = getpass.getpass("Password:")
                 send(globals()["PASSWORD"], [fileName])
 if __name__ == '__main__':
     main()
